@@ -4,414 +4,125 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NodirBest Radio — LIVE</title>
-
 <style>
-* {
-  box-sizing: border-box;
-}
-
-html, body {
-  margin: 0;
-  height: 100%;
-  font-family: system-ui, Arial, sans-serif;
-  background: #100d1e;
-  color: white;
-}
-
-.hero {
-  min-height: 100svh;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  overflow: hidden;
-  background: radial-gradient(
-    circle at 50% 35%,
-    #57368a,
-    #171124 70%
-  );
-}
-
-/* RASM O'LCHAMI TO'G'RILANDI */
-.backdrop {
-  position: absolute;
-  inset: 0;
-
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center center;
-
-  opacity: .85;
-  transition: background-image .7s;
-}
-
-.shade {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(7,5,16,.7),
-    rgba(7,5,16,.05) 38%,
-    rgba(7,5,16,.7) 70%,
-    #090713
-  );
-}
-
-header, .content {
-  position: relative;
-  z-index: 1;
-}
-
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 28px 23px;
-  font-weight: 800;
-  letter-spacing: 2px;
-  font-size: clamp(15px,4vw,23px);
-}
-
-.live {
-  background: #ff2263;
-  padding: 11px 17px;
-  border-radius: 30px;
-  font-size: 13px;
-  letter-spacing: 1px;
-}
-
-.content {
-  text-align: center;
-  padding: 12px 24px 38px;
-}
-
-.eyebrow {
-  letter-spacing: 4px;
-  font-size: 13px;
-  color: #d8c9ff;
-  font-weight: 700;
-}
-
-h1 {
-  font-size: clamp(32px,8vw,55px);
-  margin: 15px 0 6px;
-  text-shadow: 0 3px 22px #000;
-}
-
-#song {
-  font-size: clamp(17px,4vw,24px);
-  margin: 0 0 25px;
-  color: #eee;
-}
-
-.play {
-  width: 100px;
-  height: 100px;
-  border: 0;
-  border-radius: 50%;
-  font-size: 39px;
-  color: white;
-  background: linear-gradient(140deg,#7963ff,#a824db);
-  box-shadow: 0 0 38px #8746e66b;
-  cursor: pointer;
-}
-
-.volume {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  justify-content: center;
-  margin: 28px auto;
-  max-width: 380px;
-}
-
-.volume input {
-  width: 100%;
-  accent-color: #aa7bff;
-}
-
-#status {
-  font-size: 14px;
-  color: #ddd;
-  min-height: 22px;
-}
-
-.small {
-  font-size: 12px;
-  letter-spacing: 2px;
-  color: #c8b8dc;
-  margin-top: 20px;
-}
-
-.test {
-  border: 1px solid #ffffff35;
-  background: #ffffff12;
-  color: white;
-  border-radius: 14px;
-  padding: 11px;
-  margin-top: 12px;
-  font-size: 13px;
-}
-
-.test input {
-  max-width: 220px;
-  padding: 9px;
-  border-radius: 8px;
-  border: 0;
-}
-
-.test button {
-  padding: 9px;
-  border: 0;
-  border-radius: 8px;
-  background: #b47aff;
-  color: #100d1e;
-  font-weight: 700;
-}
-
-.test summary {
-  cursor: pointer;
-}
-
-#credit {
-  font-size: 11px;
-  color: #ddd;
-}
-
-a {
-  color: #ded0ff;
-}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:system-ui,Arial,sans-serif;background:#100d1e;color:white}
+.hero{min-height:100svh;position:relative;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;background:radial-gradient(circle at 50% 35%,#57368a,#171124 70%)}
+/* Two independent image layers: blurred full-screen fill + uncropped foreground. */
+.backdrop-blur,.backdrop{position:absolute;inset:0;pointer-events:none;background-repeat:no-repeat;background-position:center;transition:background-image .7s}
+.backdrop-blur{inset:-35px;background-size:cover;filter:blur(30px) brightness(.55);opacity:.85}
+.backdrop{background-size:contain;opacity:.94}
+.shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(7,5,16,.7),rgba(7,5,16,.08) 38%,rgba(7,5,16,.55) 70%,rgba(9,7,19,.78))}
+header,.content{position:relative;z-index:1}
+header{display:flex;justify-content:space-between;align-items:center;padding:28px 23px;font-weight:800;letter-spacing:2px;font-size:clamp(15px,4vw,23px);gap:12px}
+.live{flex-shrink:0;background:#ff2263;padding:11px 17px;border-radius:30px;font-size:13px;letter-spacing:1px}
+.content{text-align:center;padding:12px 24px 38px}
+.eyebrow{letter-spacing:4px;font-size:13px;color:#d8c9ff;font-weight:700}
+h1{font-size:clamp(32px,8vw,55px);margin:15px 0 6px;text-shadow:0 3px 22px #000}
+#song{font-size:clamp(17px,4vw,24px);margin:0 0 25px;color:#eee;text-shadow:0 2px 12px #000}
+.play{width:100px;height:100px;border:0;border-radius:50%;font-size:39px;color:white;background:linear-gradient(140deg,#7963ff,#a824db);box-shadow:0 0 38px #8746e66b;cursor:pointer}
+.volume{display:flex;align-items:center;gap:16px;justify-content:center;margin:28px auto;max-width:380px}
+.volume input{width:100%;accent-color:#aa7bff}
+#status{font-size:14px;color:#ddd;min-height:22px}
+.small{font-size:12px;letter-spacing:2px;color:#c8b8dc;margin-top:20px}
+.test{border:1px solid #ffffff35;background:#ffffff12;color:white;border-radius:14px;padding:11px;margin-top:12px;font-size:13px}
+.test input{max-width:220px;width:100%;padding:9px;border-radius:8px;border:0;margin:4px}
+.test button{padding:9px;border:0;border-radius:8px;background:#b47aff;color:#100d1e;font-weight:700}
+.test summary{cursor:pointer}
+#credit{font-size:11px;color:#ddd}
+a{color:#ded0ff}
 </style>
 </head>
-
 <body>
-
 <main class="hero">
-
+  <div class="backdrop-blur" id="backdropBlur"></div>
   <div class="backdrop" id="backdrop"></div>
   <div class="shade"></div>
-
-  <header>
-    <span>NODIRBEST RADIO</span>
-    <span class="live">● LIVE</span>
-  </header>
-
+  <header><span>NODIRBEST RADIO</span><span class="live">● LIVE</span></header>
   <section class="content">
-
     <div class="eyebrow">NOW PLAYING</div>
-
     <h1 id="artist">NodirBest Radio</h1>
     <p id="song">Your music, your vibe</p>
-
-    <button class="play" id="play" aria-label="Play radio">
-      ▶
-    </button>
-
-    <div class="volume">
-      <span>🔊</span>
-      <input
-        id="volume"
-        type="range"
-        min="0"
-        max="100"
-        value="75"
-        aria-label="Volume"
-      >
-    </div>
-
+    <button class="play" id="play" aria-label="Play radio">▶</button>
+    <div class="volume"><span>🔊</span><input id="volume" type="range" min="0" max="100" value="75" aria-label="Volume"></div>
     <div id="status">Press Play to listen live</div>
     <div id="credit"></div>
-
-    <div class="small">
-      192 KBPS · LIVE STREAM
-    </div>
-
+    <div class="small">192 KBPS · LIVE STREAM</div>
     <details class="test">
       <summary>Artwork test / diagnostics</summary>
-
-      <p>
-        Test with an artist and song to verify real artwork lookup.
-        This does not change the live radio metadata.
-      </p>
-
-      <input
-        id="testArtist"
-        placeholder="Artist e.g. F.R. David"
-      >
-
-      <input
-        id="testSong"
-        placeholder="Song e.g. Words"
-      >
-
+      <p>Test with an artist and song to verify real artwork lookup. This does not change the live radio metadata.</p>
+      <input id="testArtist" placeholder="Artist e.g. F.R. David">
+      <input id="testSong" placeholder="Song e.g. Words">
       <button id="testButton">Test photo</button>
-
       <p id="diagnostic"></p>
     </details>
-
   </section>
 </main>
-
-<audio
-  id="audio"
-  preload="none"
-  src="https://stream.volnorez.com/live-app/927955?br=192">
-</audio>
-
+<audio id="audio" preload="none" src="https://stream.volnorez.com/live-app/927955?br=192"></audio>
 <script>
-const audio = document.getElementById('audio');
-const play = document.getElementById('play');
-const status = document.getElementById('status');
-
-audio.volume = .75;
-
-play.onclick = async () => {
-  if (!audio.paused) {
-    audio.pause();
-    return;
-  }
-
-  status.textContent = 'Connecting…';
-
-  try {
-    await audio.play();
-  } catch (e) {
-    status.textContent =
-      'Could not start audio. Tap Play again.';
-  }
+const audio=document.getElementById('audio');
+const play=document.getElementById('play');
+const status=document.getElementById('status');
+audio.volume=.75;
+play.onclick=async()=>{
+  if(!audio.paused){audio.pause();return}
+  status.textContent='Connecting…';
+  try{await audio.play()}catch(e){status.textContent='Could not start audio. Tap Play again.'}
 };
-
-audio.onplaying = () => {
-  play.textContent = 'Ⅱ';
-  status.textContent = 'You are listening live';
-};
-
-audio.onpause = () => {
-  play.textContent = '▶';
-  status.textContent = 'Paused';
-};
-
-audio.onerror = () => {
-  status.textContent =
-    'Stream unavailable. Please try again.';
-};
-
-document.getElementById('volume').oninput = e => {
-  audio.volume = Number(e.target.value) / 100;
-};
-
-let last = '';
-let testMode = false;
-
-async function artwork(artist, song) {
-  try {
-    const u =
-      '/.netlify/functions/nowplaying?artist=' +
-      encodeURIComponent(artist) +
-      '&song=' +
-      encodeURIComponent(song);
-
-    const r = await fetch(u, {
-      cache: 'no-store'
-    });
-
-    const d = await r.json();
-
-    if (d.image) {
-      document.getElementById('backdrop')
-        .style.backgroundImage =
-        'url(' + JSON.stringify(d.image) + ')';
-
-      document.getElementById('credit').textContent =
-        d.imageType === 'artist'
-          ? 'Artist image'
-          : 'Album artwork';
-
+audio.onplaying=()=>{play.textContent='Ⅱ';status.textContent='You are listening live'};
+audio.onpause=()=>{play.textContent='▶';status.textContent='Paused'};
+audio.onerror=()=>{status.textContent='Stream unavailable. Please try again.'};
+document.getElementById('volume').oninput=e=>audio.volume=Number(e.target.value)/100;
+let last='',testMode=false;
+async function artwork(artist,song){
+  try{
+    const u='/.netlify/functions/nowplaying?artist='+encodeURIComponent(artist)+'&song='+encodeURIComponent(song);
+    const r=await fetch(u,{cache:'no-store'});
+    if(!r.ok)throw Error('Artwork service unavailable');
+    const d=await r.json();
+    if(d.image){
+      const imageValue='url('+JSON.stringify(d.image)+')';
+      document.getElementById('backdrop').style.backgroundImage=imageValue;
+      document.getElementById('backdropBlur').style.backgroundImage=imageValue;
+      document.getElementById('credit').textContent=d.imageType==='artist'?'Artist image':'Album artwork';
       return true;
     }
-  } catch (e) {}
-
+  }catch(e){}
   return false;
 }
-
-async function poll() {
-  if (testMode) return;
-
-  try {
-    const r = await fetch(
-      '/.netlify/functions/nowplaying',
-      { cache: 'no-store' }
-    );
-
-    if (!r.ok) {
-      throw Error('Metadata service unavailable');
-    }
-
-    const d = await r.json();
-
-    document.getElementById('diagnostic').textContent =
-      d.diagnostic || '';
-
-    if (d.artist && d.song) {
-      const key = d.artist + '|' + d.song;
-
-      if (key !== last) {
-        last = key;
-
-        document.getElementById('artist').textContent =
-          d.artist;
-
-        document.getElementById('song').textContent =
-          d.song;
-
-        const ok = await artwork(d.artist, d.song);
-
-        if (!ok) {
-          document.getElementById('credit').textContent =
-            'Photo not available';
-        }
+async function poll(){
+  if(testMode)return;
+  try{
+    const r=await fetch('/.netlify/functions/nowplaying',{cache:'no-store'});
+    if(!r.ok)throw Error('Metadata service unavailable');
+    const d=await r.json();
+    document.getElementById('diagnostic').textContent=d.diagnostic||'';
+    if(d.artist&&d.song){
+      const key=d.artist+'|'+d.song;
+      if(key!==last){
+        last=key;
+        document.getElementById('artist').textContent=d.artist;
+        document.getElementById('song').textContent=d.song;
+        const ok=await artwork(d.artist,d.song);
+        if(!ok)document.getElementById('credit').textContent='Photo not available';
       }
-    } else {
-      document.getElementById('diagnostic').textContent =
-        d.diagnostic ||
-        'Volnorez metadata could not be retrieved';
+    }else{
+      document.getElementById('diagnostic').textContent=d.diagnostic||'Volnorez metadata could not be retrieved';
     }
-  } catch (e) {
-    document.getElementById('diagnostic').textContent =
-      e.message;
-  }
+  }catch(e){document.getElementById('diagnostic').textContent=e.message}
 }
-
-document.getElementById('testButton').onclick =
-  async () => {
-
-    const a = document.getElementById('testArtist')
-      .value.trim();
-
-    const s = document.getElementById('testSong')
-      .value.trim();
-
-    if (!a || !s) return;
-
-    testMode = true;
-
-    document.getElementById('artist').textContent = a;
-    document.getElementById('song').textContent = s;
-
-    document.getElementById('diagnostic').textContent =
-      'Searching artwork…';
-
-    const ok = await artwork(a, s);
-
-    document.getElementById('diagnostic').textContent =
-      ok
-        ? 'Artwork found (test mode). Refresh to return to live mode.'
-        : 'No matching image found.';
-  };
-
-poll();
-setInterval(poll, 20000);
+document.getElementById('testButton').onclick=async()=>{
+  const a=document.getElementById('testArtist').value.trim();
+  const s=document.getElementById('testSong').value.trim();
+  if(!a||!s)return;
+  testMode=true;
+  document.getElementById('artist').textContent=a;
+  document.getElementById('song').textContent=s;
+  document.getElementById('diagnostic').textContent='Searching artwork…';
+  const ok=await artwork(a,s);
+  document.getElementById('diagnostic').textContent=ok?'Artwork found (test mode). Refresh to return to live mode.':'No matching image found.';
+};
+poll();setInterval(poll,20000);
 </script>
-
 </body>
 </html>
