@@ -62,46 +62,62 @@ audio.onplaying=()=>{play.textContent='Ⅱ';status.textContent='You are listenin
 audio.onpause=()=>{play.textContent='▶';status.textContent='Paused'};
 audio.onerror=()=>{status.textContent='Stream unavailable. Please try again.'};
 document.getElementById('volume').oninput=e=>audio.volume=Number(e.target.value)/100;
-let last='',polling=false;
-async function artwork(artist,song){
-  try{
-    const u='/.netlify/functions/nowplaying?artist='+encodeURIComponent(artist)+'&song='+encodeURIComponent(song);
-    const r=await fetch(u,{cache:'no-store'});
-    if(!r.ok)throw Error('Artwork service unavailable');
-    const d=await r.json();
-    if(d.image){
-      const imageValue='url('+JSON.stringify(d.image)+')';
-      document.getElementById('backdrop').style.backgroundImage=imageValue;
-      document.getElementById('backdropBlur').style.backgroundImage=imageValue;
-      document.getElementById('credit').textContent=d.imageType==='artist'?'Artist image':'Album artwork';
-      return true;
+let last='',polling=false,imageVersion=0;
+const foreground=document.getElementById('backdrop');
+const background=document.getElementById('backdropBlur');
+const credit=document.getElementById('credit');
+
+async function showImage(url, type, version){
+  if(!url){
+    if(version===imageVersion){
+      foreground.style.backgroundImage='none';
+      background.style.backgroundImage='none';
+      credit.textContent='Artwork unavailable';
     }
-  }catch(e){}
-  return false;
+    return;
+  }
+  const img=new Image();
+  img.onload=()=>{
+    if(version!==imageVersion)return;
+    const cssUrl='url('+JSON.stringify(url)+')';
+    foreground.style.backgroundImage=cssUrl;
+    background.style.backgroundImage=cssUrl;
+    credit.textContent=type==='artist'?'Artist image':'Album artwork';
+  };
+  img.onerror=()=>{
+    if(version===imageVersion)credit.textContent='Artwork unavailable';
+  };
+  img.src=url;
 }
+
 async function poll(){
-  if(polling)return;
+  if(polling || document.hidden)return;
   polling=true;
   try{
     const r=await fetch('/.netlify/functions/nowplaying',{cache:'no-store'});
-    if(!r.ok)throw Error('Metadata service unavailable');
+    if(!r.ok)throw Error('Metadata unavailable');
     const d=await r.json();
-    if(d.artist&&d.song){
+    if(d.artist && d.song){
       const key=d.artist+'|'+d.song;
       if(key!==last){
         last=key;
+        const version=++imageVersion;
         document.getElementById('artist').textContent=d.artist;
         document.getElementById('song').textContent=d.song;
-        const ok=await artwork(d.artist,d.song);
-        if(!ok)document.getElementById('credit').textContent='Photo not available';
+        credit.textContent='Loading artwork…';
+        // Use artwork returned by AudD immediately; no extra server request.
+        if(d.image){showImage(d.image,d.imageType,version)}
+        else{
+          const url='/.netlify/functions/nowplaying?artist='+encodeURIComponent(d.artist)+'&song='+encodeURIComponent(d.song);
+          fetch(url,{cache:'no-store'}).then(x=>x.json()).then(x=>showImage(x.image,x.imageType,version)).catch(()=>showImage(null,null,version));
+        }
       }
-    }else{
-      // Keep the station branding until track identification succeeds.
     }
-  }catch(e){console.warn('Now playing unavailable:',e.message)}
+  }catch(e){console.warn('Now playing:',e.message)}
   finally{polling=false}
 }
 poll();setInterval(poll,3000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});
 </script>
 </body>
 </html>
