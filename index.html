@@ -6,20 +6,23 @@
 <title>NodirBest Radio — LIVE</title>
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;min-height:100%;font-family:system-ui,Arial,sans-serif;background:#100d1e;color:white}
+html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:#100d1e;color:white}
 .hero{min-height:100svh;position:relative;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;background:radial-gradient(circle at 50% 35%,#57368a,#171124 70%)}
 /* Two independent image layers: blurred full-screen fill + uncropped foreground. */
 .backdrop-blur,.backdrop{position:absolute;inset:0;pointer-events:none;background-repeat:no-repeat;background-position:center;transition:background-image .7s}
 .backdrop-blur{inset:-35px;background-size:cover;filter:blur(30px) brightness(.55);opacity:.85}
 .backdrop{background-size:contain;opacity:.94}
 .shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(7,5,16,.7),rgba(7,5,16,.08) 38%,rgba(7,5,16,.55) 70%,rgba(9,7,19,.78))}
-header,.content{position:relative;z-index:1}
+header,.content,.track-info{position:relative;z-index:1}
 header{display:flex;justify-content:space-between;align-items:center;padding:28px 23px;font-weight:800;letter-spacing:2px;font-size:clamp(15px,4vw,23px);gap:12px}
 .live{flex-shrink:0;background:#ff2263;padding:11px 17px;border-radius:30px;font-size:13px;letter-spacing:1px}
-.content{text-align:center;padding:12px 24px 38px}
-.eyebrow{letter-spacing:4px;font-size:13px;color:#d8c9ff;font-weight:700}
-h1{font-size:clamp(32px,8vw,55px);margin:15px 0 6px;text-shadow:0 3px 22px #000}
-#song{font-size:clamp(17px,4vw,24px);margin:0 0 25px;color:#eee;text-shadow:0 2px 12px #000}
+.content{text-align:center;padding:12px 24px 38px;display:flex;flex-direction:column;align-items:center;gap:0}
+.track-info{position:absolute;top:clamp(112px,15svh,190px);left:18px;right:18px;text-align:center;padding:20px 14px 22px;background:linear-gradient(110deg,rgba(15,10,32,.15),rgba(20,12,44,.58),rgba(15,10,32,.15));border:1px solid rgba(255,255,255,.12);border-radius:24px;box-shadow:0 12px 45px rgba(0,0,0,.18);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+.track-info h1{overflow-wrap:anywhere}.track-info #song{overflow-wrap:anywhere}
+@media(max-height:650px){.track-info{top:90px;padding:12px 10px}.track-info h1{margin:8px 0 5px}.content{padding-bottom:14px}.volume{margin:15px auto}}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;letter-spacing:3.6px;font-size:11px;color:#e4d6ff;font-weight:800;text-transform:uppercase}.eyebrow::before{content:"";width:7px;height:7px;background:#c58bff;border-radius:50%;box-shadow:0 0 14px #ba79ff}
+h1{font-size:clamp(32px,8.5vw,54px);line-height:1.06;font-weight:850;letter-spacing:-1.7px;margin:15px 0 9px;color:#fff;text-shadow:0 3px 24px rgba(0,0,0,.65)}
+#song{font-size:clamp(16px,4.4vw,22px);font-weight:500;line-height:1.35;letter-spacing:.15px;margin:0;color:#e8ddfa;text-shadow:0 2px 14px rgba(0,0,0,.75)}
 .play{width:100px;height:100px;border:0;border-radius:50%;font-size:39px;color:white;background:linear-gradient(140deg,#7963ff,#a824db);box-shadow:0 0 38px #8746e66b;cursor:pointer}
 .volume{display:flex;align-items:center;gap:16px;justify-content:center;margin:28px auto;max-width:380px}
 .volume input{width:100%;accent-color:#aa7bff}
@@ -35,14 +38,14 @@ a{color:#ded0ff}
   <div class="backdrop" id="backdrop"></div>
   <div class="shade"></div>
   <header><span>NODIRBEST RADIO</span><span class="live">● LIVE</span></header>
-  <section class="content">
+  <div class="track-info" aria-live="polite">
     <div class="eyebrow">NOW PLAYING</div>
     <h1 id="artist">NodirBest Radio</h1>
     <p id="song">Your music, your vibe</p>
+  </div>
+  <section class="content">
     <button class="play" id="play" aria-label="Play radio">▶</button>
     <div class="volume"><span>🔊</span><input id="volume" type="range" min="0" max="100" value="75" aria-label="Volume"></div>
-    <div id="status">Press Play to listen live</div>
-    <div id="credit"></div>
     <div class="small">192 KBPS · LIVE STREAM</div>
 
   </section>
@@ -51,7 +54,7 @@ a{color:#ded0ff}
 <script>
 const audio=document.getElementById('audio');
 const play=document.getElementById('play');
-const status=document.getElementById('status');
+const status={set textContent(value){console.info('Radio status:',value)}};
 audio.volume=.75;
 play.onclick=async()=>{
   if(!audio.paused){audio.pause();return}
@@ -65,7 +68,7 @@ document.getElementById('volume').oninput=e=>audio.volume=Number(e.target.value)
 let last='',polling=false,imageVersion=0;
 const foreground=document.getElementById('backdrop');
 const background=document.getElementById('backdropBlur');
-const credit=document.getElementById('credit');
+const credit={set textContent(value){console.info('Artwork status:',value)}};
 
 async function showImage(url, type, version){
   if(!url){
