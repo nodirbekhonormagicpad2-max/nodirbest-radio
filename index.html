@@ -25,10 +25,6 @@ h1{font-size:clamp(32px,8vw,55px);margin:15px 0 6px;text-shadow:0 3px 22px #000}
 .volume input{width:100%;accent-color:#aa7bff}
 #status{font-size:14px;color:#ddd;min-height:22px}
 .small{font-size:12px;letter-spacing:2px;color:#c8b8dc;margin-top:20px}
-.test{border:1px solid #ffffff35;background:#ffffff12;color:white;border-radius:14px;padding:11px;margin-top:12px;font-size:13px}
-.test input{max-width:220px;width:100%;padding:9px;border-radius:8px;border:0;margin:4px}
-.test button{padding:9px;border:0;border-radius:8px;background:#b47aff;color:#100d1e;font-weight:700}
-.test summary{cursor:pointer}
 #credit{font-size:11px;color:#ddd}
 a{color:#ded0ff}
 </style>
@@ -48,14 +44,7 @@ a{color:#ded0ff}
     <div id="status">Press Play to listen live</div>
     <div id="credit"></div>
     <div class="small">192 KBPS · LIVE STREAM</div>
-    <details class="test">
-      <summary>Artwork test / diagnostics</summary>
-      <p>Test with an artist and song to verify real artwork lookup. This does not change the live radio metadata.</p>
-      <input id="testArtist" placeholder="Artist e.g. F.R. David">
-      <input id="testSong" placeholder="Song e.g. Words">
-      <button id="testButton">Test photo</button>
-      <p id="diagnostic"></p>
-    </details>
+
   </section>
 </main>
 <audio id="audio" preload="none" src="https://stream.volnorez.com/live-app/927955?br=192"></audio>
@@ -73,7 +62,7 @@ audio.onplaying=()=>{play.textContent='Ⅱ';status.textContent='You are listenin
 audio.onpause=()=>{play.textContent='▶';status.textContent='Paused'};
 audio.onerror=()=>{status.textContent='Stream unavailable. Please try again.'};
 document.getElementById('volume').oninput=e=>audio.volume=Number(e.target.value)/100;
-let last='',testMode=false;
+let last='',polling=false;
 async function artwork(artist,song){
   try{
     const u='/.netlify/functions/nowplaying?artist='+encodeURIComponent(artist)+'&song='+encodeURIComponent(song);
@@ -91,12 +80,12 @@ async function artwork(artist,song){
   return false;
 }
 async function poll(){
-  if(testMode)return;
+  if(polling)return;
+  polling=true;
   try{
     const r=await fetch('/.netlify/functions/nowplaying',{cache:'no-store'});
     if(!r.ok)throw Error('Metadata service unavailable');
     const d=await r.json();
-    document.getElementById('diagnostic').textContent=d.diagnostic||'';
     if(d.artist&&d.song){
       const key=d.artist+'|'+d.song;
       if(key!==last){
@@ -107,22 +96,12 @@ async function poll(){
         if(!ok)document.getElementById('credit').textContent='Photo not available';
       }
     }else{
-      document.getElementById('diagnostic').textContent=d.diagnostic||'Volnorez metadata could not be retrieved';
+      // Keep the station branding until track identification succeeds.
     }
-  }catch(e){document.getElementById('diagnostic').textContent=e.message}
+  }catch(e){console.warn('Now playing unavailable:',e.message)}
+  finally{polling=false}
 }
-document.getElementById('testButton').onclick=async()=>{
-  const a=document.getElementById('testArtist').value.trim();
-  const s=document.getElementById('testSong').value.trim();
-  if(!a||!s)return;
-  testMode=true;
-  document.getElementById('artist').textContent=a;
-  document.getElementById('song').textContent=s;
-  document.getElementById('diagnostic').textContent='Searching artwork…';
-  const ok=await artwork(a,s);
-  document.getElementById('diagnostic').textContent=ok?'Artwork found (test mode). Refresh to return to live mode.':'No matching image found.';
-};
-poll();setInterval(poll,20000);
+poll();setInterval(poll,3000);
 </script>
 </body>
 </html>
