@@ -1,4 +1,4 @@
-// NodirBest Radio — AudD + original album artwork
+// NodirBest Radio — AudD + iTunes artwork
 
 const STREAM =
   'https://stream.volnorez.com/live-app/927955?br=192';
@@ -9,94 +9,61 @@ const HEADERS = {
 };
 
 const SAMPLE_MS = 6000;
-const MAX_BYTES = 500000;
+const MAX_BYTES = 600000;
 const CACHE_MS = 5000;
 
 let cached = null;
 let cachedAt = 0;
 let inflight = null;
 
-function reply(data) {
-  return {
-    statusCode: 200,
-    headers: HEADERS,
-    body: JSON.stringify(data)
-  };
-}
+const reply = (data) => ({
+  statusCode: 200,
+  headers: HEADERS,
+  body: JSON.stringify(data)
+});
 
-function normalize(text) {
-  return String(text || '')
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]/gu, '');
-}
+// iTunes orqali albom rasmini topish
+async function artwork(artist, song) {
+  const norm = (s) =>
+    String(s || '')
+      .toLocaleLowerCase()
+      .replace(/[^\p{L}\p{N}]/gu, '');
 
-// Shubhali to'plam albomlarni filtrlash
-function isCompilation(album) {
-  return /(?:various artists|top hits|greatest hits|best of|pride hits|party hits|mega hits|summer hits|chart hits|hits 20\d\d|collection|compilation|karaoke|tribute)/i
-    .test(album || '');
-}
-
-// iTunes'dan mos albom muqovasini topish
-async function findArtwork(artist, song) {
   try {
     const query = encodeURIComponent(
       `${artist} ${song}`
     );
 
-    const response = await fetch(
-      `https://itunes.apple.com/search?term=${query}&entity=song&limit=50`,
+    const res = await fetch(
+      `https://itunes.apple.com/search?term=${query}&entity=song&limit=15`,
       {
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(6500)
       }
     );
 
-    if (!response.ok) return {};
+    if (!res.ok) return {};
 
-    const data = await response.json();
+    const data = await res.json();
 
-    const wantedArtist = normalize(artist);
-    const wantedSong = normalize(song);
+    const a = norm(artist);
+    const t = norm(song);
 
-    const matches = (data.results || []).filter(item => {
-      const itemArtist = normalize(item.artistName);
-      const itemSong = normalize(item.trackName);
-
-      const sameArtist =
-        itemArtist === wantedArtist;
-
-      const sameSong =
-        itemSong === wantedSong;
-
-      const validAlbum =
-        !isCompilation(item.collectionName);
+    const match = (data.results || []).find(x => {
+      const xa = norm(x.artistName);
+      const xt = norm(x.trackName);
 
       return (
-        sameArtist &&
-        sameSong &&
-        validAlbum &&
-        item.artworkUrl100
+        xa &&
+        xt &&
+        (xa.includes(a) || a.includes(xa)) &&
+        (xt.includes(t) || t.includes(xt))
       );
     });
 
-    if (!matches.length) return {};
-
-    // To'plam bo'lmagan albomlarni afzal ko'rish
-    matches.sort((a, b) => {
-      const aScore =
-        a.collectionName?.toLowerCase()
-          .includes('single') ? 1 : 0;
-
-      const bScore =
-        b.collectionName?.toLowerCase()
-          .includes('single') ? 1 : 0;
-
-      return aScore - bScore;
-    });
-
-    const best = matches[0];
+    if (!match?.artworkUrl100) return {};
 
     return {
-      image: best.artworkUrl100.replace(
+      image: match.artworkUrl100.replace(
         /100x100bb|100x100/g,
         '1200x1200bb'
       ),
@@ -114,60 +81,62 @@ async function sampleStream() {
 
   const timeout = setTimeout(
     () => controller.abort(),
-    SAMPLE_MS + 5000
+    SAMPLE_MS + 4000
   );
 
   let reader;
 
   try {
-    const response = await fetch(STREAM, {
+    const res = await fetch(STREAM, {
       signal: controller.signal,
       headers: {
         accept: 'audio/mpeg,*/*'
       }
     });
 
-    if (!response.ok || !response.body) {
+    if (!res.ok || !res.body) {
       throw new Error(
-        `Stream HTTP ${response.status}`
+        `Radio stream HTTP ${res.status}`
       );
     }
 
-    reader = response.body.getReader();
+    reader = res.body.getReader();
 
-    const chunks = [];
-    let total = 0;
+    const parts = [];
+    let bytes = 0;
 
-    const deadline = Date.now() + SAMPLE_MS;
+    const until = Date.now() + SAMPLE_MS;
 
     while (
-      Date.now() < deadline &&
-      total < MAX_BYTES
+      Date.now() < until &&
+      bytes < MAX_BYTES
     ) {
       const { value, done } = await reader.read();
 
       if (done) break;
 
       if (value?.length) {
-        chunks.push(value);
-        total += value.length;
+        parts.push(value);
+        bytes += value.length;
       }
     }
 
-    if (total < 20000) {
-      throw new Error('Audio sample too short');
+    if (bytes < 24000) {
+      throw new Error(
+        `Audio sample too short (${bytes} bytes)`
+      );
     }
 
-    const result = new Uint8Array(total);
+    const buffer = new Uint8Array(bytes);
 
-    let offset = 0;
+    let pos = 0;
 
-    for (const chunk of chunks) {
-      result.set(chunk, offset);
-      offset += chunk.length;
+    for (const part of parts) {
+      buffer.set(part, pos);
+      pos += part.length;
     }
 
-    return result;
+    return buffer;
 
   } finally {
     clearTimeout(timeout);
@@ -179,7 +148,7 @@ async function sampleStream() {
   }
 }
 
-// AudD orqali qo'shiqni aniqlash
+// AudD orqali qo‘shiqni aniqlash
 async function recognize() {
   const token = process.env.AUDD_API_TOKEN;
 
@@ -187,27 +156,28 @@ async function recognize() {
     return {
       artist: null,
       song: null,
-      image: null,
-      diagnostic: 'AUDD_API_TOKEN missing'
+      diagnostic:
+        'AUDD_API_TOKEN is missing from Netlify environment variables.'
     };
   }
 
   try {
-    const audio = await sampleStream();
+    const sample = await sampleStream();
 
     const form = new FormData();
 
     form.append('api_token', token);
+    form.append('return', 'apple_music,spotify');
 
     form.append(
       'file',
-      new Blob([audio], {
+      new Blob([sample], {
         type: 'audio/mpeg'
       }),
-      'radio.mp3'
+      'radio-sample.mp3'
     );
 
-    const response = await fetch(
+    const res = await fetch(
       'https://api.audd.io/',
       {
         method: 'POST',
@@ -216,20 +186,32 @@ async function recognize() {
       }
     );
 
-    if (!response.ok) {
+    if (!res.ok) {
       throw new Error(
-        `AudD HTTP ${response.status}`
+        `AudD HTTP ${res.status}`
       );
     }
 
-    const data = await response.json();
+    const data = await res.json();
 
     if (data.status !== 'success') {
+      const msg =
+        typeof data.error === 'object'
+          ? (
+              data.error?.error_message ||
+              data.error?.error_code ||
+              'unknown'
+            )
+          : (
+              data.error ||
+              data.status
+            );
+
       return {
         artist: null,
         song: null,
-        image: null,
-        diagnostic: 'AudD recognition error'
+        diagnostic:
+          `AudD error: ${String(msg).slice(0, 160)}`
       };
     }
 
@@ -240,68 +222,65 @@ async function recognize() {
       return {
         artist: null,
         song: null,
-        image: null,
-        diagnostic: 'Song not recognized'
+        diagnostic:
+          'AudD could not recognize the current audio sample.'
       };
     }
 
     const artist = data.result.artist;
     const song = data.result.title;
 
-    const artwork = await findArtwork(
-      artist,
-      song
-    );
+    const imageFromAudD =
+      data.result.apple_music?.artwork?.url
+        ?.replace('{w}', '1200')
+        .replace('{h}', '1200');
+
+    const art = imageFromAudD
+      ? {
+          image: imageFromAudD,
+          imageType: 'album'
+        }
+      : await artwork(artist, song);
 
     return {
       artist,
       song,
-      image: artwork.image || null,
-      imageType: artwork.imageType || null,
-      diagnostic: artwork.image
-        ? 'Original album artwork found'
-        : 'Song recognized; artwork unavailable'
+      ...art,
+      diagnostic: 'Song recognized by AudD.'
     };
 
-  } catch (error) {
+  } catch (err) {
     return {
       artist: null,
       song: null,
-      image: null,
       diagnostic:
-        `Recognition failed: ${error.message}`
+        `Recognition failed: ${err.message}`
     };
   }
 }
 
-exports.handler = async event => {
-  const params = event.queryStringParameters || {};
+// Netlify Function
+exports.handler = async (event) => {
+  const p = event.queryStringParameters || {};
 
-  // Qo'lda qo'shiq rasmi qidirish
-  if (params.artist && params.song) {
-    const artist = String(params.artist)
-      .slice(0, 120);
+  // Qo‘lda rasm qidirishni tekshirish
+  if (p.artist && p.song) {
+    const artist = String(p.artist).slice(0, 120);
+    const song = String(p.song).slice(0, 120);
 
-    const song = String(params.song)
-      .slice(0, 120);
-
-    const artwork = await findArtwork(
-      artist,
-      song
-    );
+    const art = await artwork(artist, song);
 
     return reply({
       artist,
       song,
-      image: artwork.image || null,
-      imageType: artwork.imageType || null,
-      diagnostic: artwork.image
+      ...art,
+      diagnostic: art.image
         ? 'Artwork found'
-        : 'Artwork unavailable'
+        : 'No matching album art'
     });
   }
 
-  // Qisqa muddatli kesh
+  // Kesh
   if (
     cached &&
     Date.now() - cachedAt < CACHE_MS
@@ -314,7 +293,6 @@ exports.handler = async event => {
       .then(result => {
         cached = result;
         cachedAt = Date.now();
-
         return result;
       })
       .finally(() => {
