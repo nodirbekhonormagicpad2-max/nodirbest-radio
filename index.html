@@ -13,30 +13,33 @@
       --violet: #aa64ff;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     html, body {
       margin: 0;
       min-height: 100%;
       font-family: system-ui, -apple-system, Arial, sans-serif;
       background: #100b1d;
-      color: #fff;
+      color: white;
     }
 
     .player {
       min-height: 100svh;
       display: flex;
       flex-direction: column;
+      align-items: center;
       background: radial-gradient(
         ellipse at 50% 20%,
         #382051 0%,
         #151022 55%,
         #0d0a16 100%
       );
-      overflow: hidden;
     }
 
     header {
+      width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -67,9 +70,9 @@
     }
 
     .now-playing {
+      width: 100%;
       text-align: center;
       padding: clamp(24px, 6vh, 54px) 20px 25px;
-      flex-shrink: 0;
     }
 
     .eyebrow {
@@ -81,7 +84,7 @@
     }
 
     .eyebrow::before {
-      content: '●';
+      content: "●";
       color: #b979ff;
       letter-spacing: 0;
       margin-right: 12px;
@@ -106,44 +109,34 @@
       overflow-wrap: anywhere;
     }
 
-    /* ALBOM RASMI — TO‘LIQ KVADRAT */
-    
-    
-.art-wrap {
-  width: 100%;
-  max-width: 620px;
-  margin: 0 auto;
-  padding: 0 16px;
-}
+    /* ALBOM RASMI — KVADRAT */
+    .art-wrap {
+      width: min(100% - 32px, 560px);
+      margin: 0 auto;
+    }
 
-.art {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  max-height: none;
-  border-radius: 20px;
-  overflow: hidden;
-  background: #1d1230;
-  box-shadow: 0 15px 55px #0008;
-  border: 1px solid #ffffff16;
-}
+    .art {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #241535;
+      box-shadow: 0 15px 55px #0008;
+      border: 1px solid #ffffff16;
+    }
 
-.art img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: fill;
-  display: block;
-  opacity: 0;
-  transition: opacity .4s ease;
-}
-
-.art img.visible {
-  opacity: 1;
-}
-
-
+    .art img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+      opacity: 0;
+      transition: opacity .4s ease;
+    }
 
     .art img.visible {
       opacity: 1;
@@ -160,6 +153,7 @@
     }
 
     .controls {
+      width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -220,22 +214,16 @@
       white-space: nowrap;
     }
 
-    /* KOMPYUTER */
     @media (min-width: 800px) {
       .now-playing {
         padding-top: 32px;
       }
 
       .art-wrap {
-        max-width: 620px;
-      }
-
-      .art {
-        aspect-ratio: 1 / 1;
+        width: 560px;
       }
     }
 
-    /* KICHIK TELEFON */
     @media (max-width: 380px) {
       header {
         padding: 20px 15px;
@@ -251,10 +239,6 @@
 
       .now-playing {
         padding-top: 20px;
-      }
-
-      .art-wrap {
-        padding: 0 12px;
       }
     }
   </style>
@@ -425,7 +409,6 @@
             songEl.textContent = data.song;
           }
 
-          // Rasm shu qo‘shiq davomida o‘zgarsa ham yangilanadi
           if (image !== currentImage) {
             setArtwork(image);
           }
