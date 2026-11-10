@@ -133,6 +133,9 @@
       height: 100%;
       object-fit: cover;
       object-position: center;
+      /* Fill the square even when the source image has side padding */
+      transform: scale(1.22);
+      transform-origin: center;
       display: block;
       opacity: 0;
       transition: opacity .4s ease;
