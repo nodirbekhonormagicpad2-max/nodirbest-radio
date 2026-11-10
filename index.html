@@ -133,9 +133,6 @@
       height: 100%;
       object-fit: cover;
       object-position: center;
-      /* Fill the square even when the source image has side padding */
-      transform: scale(1.22);
-      transform-origin: center;
       display: block;
       opacity: 0;
       transition: opacity .4s ease;
@@ -423,8 +420,34 @@
       }
     }
 
-    poll();
-    setInterval(poll, 3000);
+    // Check metadata only while the player tab is visible.
+    // Reduces Netlify Function requests compared with polling every 3 seconds.
+    const POLL_INTERVAL_MS = 60000;
+    let pollTimer = null;
+
+    function startMetadataUpdates() {
+      if (document.hidden) return;
+      if (pollTimer === null) {
+        poll();
+        pollTimer = setInterval(() => {
+          if (!document.hidden) poll();
+        }, POLL_INTERVAL_MS);
+      }
+    }
+
+    function stopMetadataUpdates() {
+      if (pollTimer !== null) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stopMetadataUpdates();
+      else startMetadataUpdates();
+    });
+
+    startMetadataUpdates();
   </script>
 </body>
 </html>
