@@ -1,49 +1,42 @@
-// NodirBest Radio — AudD API Saver
+
+// NodirBest Radio — AzuraCast Now Playing
 // Netlify Function
+// AudD API kerak emas
 
-const STREAM_URL =
-  "https://stream.volnorez.com/live-app/927955?br=192";
+const AZURACAST_URL = "https://a8.asurahosting.com";
 
-const CHECK_INTERVAL = 60 * 1000; // 60 soniya
-const SAMPLE_DURATION = 6000;     // 6 soniya
-const MAX_AUDIO_BYTES = 500000;
-
-let lastCheck = 0;
-let lastSong = null;
-let pendingRequest = null;
+// AzuraCast stansiya identifikatori
+const STATION_ID = "nodirbest_radio";
 
 const headers = {
   "Content-Type": "application/json; charset=utf-8",
-  "Cache-Control": "no-store"
+  "Cache-Control": "no-store",
+  "Access-Control-Allow-Origin": "*"
 };
 
-function respond(data) {
+function respond(data, statusCode = 200) {
   return {
-    statusCode: 200,
+    statusCode,
     headers,
     body: JSON.stringify(data)
   };
 }
 
-// iTunes orqali albom rasmini topish
+// iTunes orqali albom rasmini qidirish
 async function findArtwork(artist, song) {
   try {
-    const query = encodeURIComponent(
-      `${artist} ${song}`
-    );
+    const query = encodeURIComponent(`${artist} ${song}`);
 
     const response = await fetch(
       `https://itunes.apple.com/search?term=${query}&entity=song&limit=20`,
-      {
-        signal: AbortSignal.timeout(7000)
-      }
+      { signal: AbortSignal.timeout(7000) }
     );
 
     if (!response.ok) return null;
 
     const data = await response.json();
 
-    const normalize = (text) =>
+    const normalize = text =>
       String(text || "")
         .toLowerCase()
         .replace(/[^\p{L}\p{N}]/gu, "");
@@ -51,238 +44,79 @@ async function findArtwork(artist, song) {
     const targetArtist = normalize(artist);
     const targetSong = normalize(song);
 
-    const match = (data.results || []).find(item => {
-      const itemArtist = normalize(item.artistName);
-      const itemSong = normalize(item.trackName);
-
-      return (
-        itemArtist === targetArtist &&
-        itemSong === targetSong &&
-        item.artworkUrl100
-      );
-    });
-
-    if (!match) return null;
-
-    return match.artworkUrl100.replace(
-      /100x100bb|100x100/g,
-      "1200x1200bb"
+    const match = (data.results || []).find(item =>
+      normalize(item.artistName) === targetArtist &&
+      normalize(item.trackName) === targetSong &&
+      item.artworkUrl100
     );
 
+    return match
+      ? match.artworkUrl100.replace(
+          /100x100bb|100x100/g,
+          "1200x1200bb"
+        )
+      : null;
   } catch {
     return null;
   }
 }
 
-// Radio oqimidan audio olish
-async function captureAudio() {
-  const controller = new AbortController();
+// AzuraCast API orqali hozirgi qo‘shiq
+async function getNowPlaying() {
+  const apiUrl =
+    `${AZURACAST_URL}/api/nowplaying/` +
+    encodeURIComponent(STATION_ID);
 
-  const timeout = setTimeout(
-    () => controller.abort(),
-    SAMPLE_DURATION + 5000
-  );
+  const response = await fetch(apiUrl, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(10000)
+  });
 
-  let reader;
-
-  try {
-    const response = await fetch(STREAM_URL, {
-      signal: controller.signal,
-      headers: {
-        Accept: "audio/mpeg,*/*"
-      }
-    });
-
-    if (!response.ok || !response.body) {
-      throw new Error(
-        `Stream error: ${response.status}`
-      );
-    }
-
-    reader = response.body.getReader();
-
-    const chunks = [];
-    let total = 0;
-
-    const endTime = Date.now() + SAMPLE_DURATION;
-
-    while (
-      Date.now() < endTime &&
-      total < MAX_AUDIO_BYTES
-    ) {
-      const { value, done } = await reader.read();
-
-      if (done) break;
-
-      if (value?.length) {
-        chunks.push(value);
-        total += value.length;
-      }
-    }
-
-    if (total < 20000) {
-      throw new Error("Audio sample too short");
-    }
-
-    const audio = new Uint8Array(total);
-
-    let offset = 0;
-
-    for (const chunk of chunks) {
-      audio.set(chunk, offset);
-      offset += chunk.length;
-    }
-
-    return audio;
-
-  } finally {
-    clearTimeout(timeout);
-    controller.abort();
-
-    try {
-      await reader?.cancel();
-    } catch {}
+  if (!response.ok) {
+    throw new Error(`AzuraCast HTTP ${response.status}`);
   }
+
+  const data = await response.json();
+  const track = data.now_playing?.song;
+
+  if (!track) {
+    throw new Error("Now Playing data not found");
+  }
+
+  const artist = track.artist || "NodirBest Radio";
+  const song = track.title || "Your music, your vibe";
+
+  // Avval AzuraCast rasmini ishlatamiz
+  let image = track.art || null;
+
+  // AzuraCast rasmi bo‘lmasa, iTunes’dan qidiramiz
+  if (!image && track.artist && track.title) {
+    image = await findArtwork(track.artist, track.title);
+  }
+
+  return {
+    artist,
+    song,
+    image,
+    imageType: image ? "album" : null,
+    diagnostic: "AzuraCast API",
+    isOnline: data.is_online ?? null
+  };
 }
 
-// AudD orqali qo‘shiqni aniqlash
-async function recognizeSong() {
-  const token = process.env.AUDD_API_TOKEN;
-
-  if (!token) {
-    return {
-      artist: null,
-      song: null,
-      image: null,
-      diagnostic: "AUDD_API_TOKEN missing"
-    };
-  }
-
-  try {
-    const audio = await captureAudio();
-
-    const form = new FormData();
-
-    form.append("api_token", token);
-    form.append("return", "apple_music,spotify");
-
-    form.append(
-      "file",
-      new Blob([audio], {
-        type: "audio/mpeg"
-      }),
-      "radio.mp3"
-    );
-
-    const response = await fetch(
-      "https://api.audd.io/",
-      {
-        method: "POST",
-        body: form,
-        signal: AbortSignal.timeout(12000)
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `AudD HTTP ${response.status}`
-      );
-    }
-
-    const data = await response.json();
-
-    if (data.status !== "success") {
-      const errorMessage =
-        data.error?.error_message ||
-        data.error?.error_code ||
-        "Recognition error";
-
-      return {
-        artist: null,
-        song: null,
-        image: null,
-        diagnostic: `AudD error: ${errorMessage}`
-      };
-    }
-
-    if (
-      !data.result?.artist ||
-      !data.result?.title
-    ) {
-      return {
-        artist: null,
-        song: null,
-        image: null,
-        diagnostic: "Song not recognized"
-      };
-    }
-
-    const artist = data.result.artist;
-    const song = data.result.title;
-
-    const appleArtwork =
-      data.result.apple_music?.artwork?.url
-        ?.replace("{w}", "1200")
-        .replace("{h}", "1200");
-
-    const image =
-      appleArtwork ||
-      await findArtwork(artist, song);
-
-    return {
-      artist,
-      song,
-      image: image || null,
-      imageType: image ? "album" : null,
-      diagnostic: "Song recognized by AudD"
-    };
-
-  } catch (error) {
-    return {
-      artist: null,
-      song: null,
-      image: null,
-      diagnostic: `Recognition failed: ${error.message}`
-    };
-  }
-}
-
-// Asosiy Netlify Function
+// Netlify Function
 exports.handler = async () => {
-  const now = Date.now();
+  try {
+    const result = await getNowPlaying();
+    return respond(result);
+  } catch (error) {
+    console.error("Now Playing error:", error.message);
 
-  // 60 soniya ichida qayta AudD chaqirilmaydi
-  if (
-    lastCheck &&
-    now - lastCheck < CHECK_INTERVAL
-  ) {
-    return respond(
-      lastSong || {
-        artist: null,
-        song: null,
-        image: null,
-        diagnostic: "Waiting for next check"
-      }
-    );
+    return respond({
+      artist: null,
+      song: null,
+      image: null,
+      diagnostic: error.message
+    });
   }
-
-  // Bir vaqtda bir nechta so‘rovni oldini olish
-  if (!pendingRequest) {
-    lastCheck = now;
-
-    pendingRequest = recognizeSong()
-      .then(result => {
-        // Oxirgi yaxshi natijani saqlash
-        if (result.artist && result.song) {
-          lastSong = result;
-        }
-
-        return lastSong || result;
-      })
-      .finally(() => {
-        pendingRequest = null;
-      });
-  }
-
-  return respond(await pendingRequest);
 };
