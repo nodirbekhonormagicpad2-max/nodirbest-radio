@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -5,52 +6,269 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#120c23">
   <title>NodirBest Radio — LIVE</title>
+
   <style>
-    :root { color-scheme: dark; --violet: #aa64ff; }
+    :root {
+      color-scheme: dark;
+      --violet: #aa64ff;
+    }
+
     * { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; font-family: system-ui, -apple-system, Arial, sans-serif; background: #100b1d; color: #fff; }
-    .player { min-height: 100svh; display: flex; flex-direction: column; background: radial-gradient(ellipse at 50% 20%, #382051 0%, #151022 55%, #0d0a16 100%); overflow: hidden; }
-    header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 24px clamp(16px, 5vw, 36px); }
-    .brand { font-size: clamp(15px, 4vw, 23px); font-weight: 850; letter-spacing: .13em; }
-    .live { background: #ff1263; border-radius: 999px; padding: 13px 19px; font-weight: 800; font-size: 15px; letter-spacing: .09em; white-space: nowrap; box-shadow: 0 9px 28px #ff126333; }
-    .live span { font-size: 12px; margin-right: 5px; }
-    .now-playing { text-align: center; padding: clamp(24px, 6vh, 54px) 20px 25px; flex-shrink: 0; }
-    .eyebrow { color: #d8b9ff; letter-spacing: .34em; font-size: 12px; font-weight: 800; margin: 0 0 16px; }
-    .eyebrow::before { content: '●'; color: #b979ff; letter-spacing: 0; margin-right: 12px; }
-    #artist { font-size: clamp(30px, 8vw, 54px); line-height: 1.12; font-weight: 850; letter-spacing: -.04em; margin: 0 0 10px; overflow-wrap: anywhere; text-shadow: 0 6px 25px #0008; }
-    #song { font-size: clamp(18px, 4.7vw, 26px); font-weight: 500; line-height: 1.3; color: #e7d8f5; margin: 0; overflow-wrap: anywhere; }
-    .art-wrap { width: 100%; max-width: 760px; margin: 0 auto; padding: 0 16px; }
-    .art { position: relative; width: 100%; aspect-ratio: 1 / 1; max-height: min(55svh, 700px); border-radius: 20px; overflow: hidden; background: linear-gradient(140deg, #34204e, #6b3197 45%, #1d1230); box-shadow: 0 15px 55px #0008; border: 1px solid #ffffff16; }
-    .art img { width: 100%; height: 100%; object-fit: contain; display: block; opacity: 0; transition: opacity .4s ease; }
-    .art img.visible { opacity: 1; }
-    .art-placeholder { position: absolute; inset: 0; display: grid; place-items: center; color: #ffffff50; font-size: clamp(65px, 18vw, 130px); pointer-events: none; }
-    .controls { display: flex; flex-direction: column; align-items: center; padding: 22px 24px 34px; gap: 22px; margin-top: auto; }
-    .play { border: 0; width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg, #7961ff, #b522e2); box-shadow: 0 9px 38px #922aff60; color: white; font-size: 42px; cursor: pointer; display: grid; place-items: center; }
-    .play:active { transform: scale(.97); }
-    .volume { display: flex; align-items: center; gap: 16px; width: min(100%, 430px); }
-    .volume label { font-size: 25px; }
-    .volume input { width: 100%; accent-color: #b67cff; cursor: pointer; }
-    .quality { font-size: 12px; font-weight: 650; letter-spacing: .23em; color: #c7b1d9; text-align: center; }
-    #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-    @media (min-width: 800px) { .now-playing { padding-top: 32px; } .art { max-height: 520px; } }
-    @media (max-width: 380px) { header { padding: 20px 15px; } .brand { letter-spacing: .08em; } .live { padding: 10px 14px; } .now-playing { padding-top: 20px; } .art-wrap { padding: 0 12px; } }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: system-ui, -apple-system, Arial, sans-serif;
+      background: #100b1d;
+      color: #fff;
+    }
+
+    .player {
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      background: radial-gradient(
+        ellipse at 50% 20%,
+        #382051 0%,
+        #151022 55%,
+        #0d0a16 100%
+      );
+      overflow: hidden;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 24px clamp(16px, 5vw, 36px);
+    }
+
+    .brand {
+      font-size: clamp(15px, 4vw, 23px);
+      font-weight: 850;
+      letter-spacing: .13em;
+    }
+
+    .live {
+      background: #ff1263;
+      border-radius: 999px;
+      padding: 13px 19px;
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: .09em;
+      white-space: nowrap;
+      box-shadow: 0 9px 28px #ff126333;
+    }
+
+    .live span {
+      font-size: 12px;
+      margin-right: 5px;
+    }
+
+    .now-playing {
+      text-align: center;
+      padding: clamp(24px, 6vh, 54px) 20px 25px;
+      flex-shrink: 0;
+    }
+
+    .eyebrow {
+      color: #d8b9ff;
+      letter-spacing: .34em;
+      font-size: 12px;
+      font-weight: 800;
+      margin: 0 0 16px;
+    }
+
+    .eyebrow::before {
+      content: '●';
+      color: #b979ff;
+      letter-spacing: 0;
+      margin-right: 12px;
+    }
+
+    #artist {
+      font-size: clamp(30px, 8vw, 54px);
+      line-height: 1.12;
+      font-weight: 850;
+      letter-spacing: -.04em;
+      margin: 0 0 10px;
+      overflow-wrap: anywhere;
+      text-shadow: 0 6px 25px #0008;
+    }
+
+    #song {
+      font-size: clamp(18px, 4.7vw, 26px);
+      font-weight: 500;
+      line-height: 1.3;
+      color: #e7d8f5;
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+
+    /* ALBOM RASMI — TO‘LIQ KVADRAT */
+    .art-wrap {
+      width: 100%;
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    .art {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 20px;
+      overflow: hidden;
+      background: linear-gradient(
+        140deg,
+        #34204e,
+        #6b3197 45%,
+        #1d1230
+      );
+      box-shadow: 0 15px 55px #0008;
+      border: 1px solid #ffffff16;
+    }
+
+    .art img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+      opacity: 0;
+      transition: opacity .4s ease;
+    }
+
+    .art img.visible {
+      opacity: 1;
+    }
+
+    .art-placeholder {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #ffffff50;
+      font-size: clamp(65px, 18vw, 130px);
+      pointer-events: none;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 22px 24px 34px;
+      gap: 22px;
+      margin-top: auto;
+    }
+
+    .play {
+      border: 0;
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #7961ff, #b522e2);
+      box-shadow: 0 9px 38px #922aff60;
+      color: white;
+      font-size: 42px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+
+    .play:active {
+      transform: scale(.97);
+    }
+
+    .volume {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      width: min(100%, 430px);
+    }
+
+    .volume label {
+      font-size: 25px;
+    }
+
+    .volume input {
+      width: 100%;
+      accent-color: #b67cff;
+      cursor: pointer;
+    }
+
+    .quality {
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: .23em;
+      color: #c7b1d9;
+      text-align: center;
+    }
+
+    #status {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    /* KOMPYUTER */
+    @media (min-width: 800px) {
+      .now-playing {
+        padding-top: 32px;
+      }
+
+      .art-wrap {
+        max-width: 620px;
+      }
+
+      .art {
+        aspect-ratio: 1 / 1;
+      }
+    }
+
+    /* KICHIK TELEFON */
+    @media (max-width: 380px) {
+      header {
+        padding: 20px 15px;
+      }
+
+      .brand {
+        letter-spacing: .08em;
+      }
+
+      .live {
+        padding: 10px 14px;
+      }
+
+      .now-playing {
+        padding-top: 20px;
+      }
+
+      .art-wrap {
+        padding: 0 12px;
+      }
+    }
   </style>
 </head>
+
 <body>
   <main class="player">
+
     <header>
       <div class="brand">NODIRBEST RADIO</div>
       <div class="live"><span>●</span> LIVE</div>
     </header>
 
-    <!-- Qo‘shiq nomi RASMDAN OLDIN joylashgan -->
     <section class="now-playing" aria-label="Now playing">
       <p class="eyebrow">NOW PLAYING</p>
       <h1 id="artist">NodirBest Radio</h1>
       <p id="song">Your music, your vibe</p>
     </section>
 
-    <!-- Qo‘shiq rasmi alohida joylashgan -->
     <section class="art-wrap" aria-label="Album artwork">
       <div class="art">
         <div class="art-placeholder" id="placeholder">♫</div>
@@ -60,16 +278,33 @@
 
     <section class="controls">
       <button class="play" id="play" aria-label="Play radio">▶</button>
+
       <div class="volume">
         <label for="volume">🔊</label>
-        <input id="volume" type="range" min="0" max="100" value="75" aria-label="Volume">
+        <input
+          id="volume"
+          type="range"
+          min="0"
+          max="100"
+          value="75"
+          aria-label="Volume"
+        >
       </div>
+
       <div class="quality">192 KBPS · LIVE STREAM</div>
-      <div id="status" role="status" aria-live="polite">Press Play to listen live</div>
+
+      <div id="status" role="status" aria-live="polite">
+        Press Play to listen live
+      </div>
     </section>
   </main>
 
-  <audio id="audio" preload="none" src="https://a8.asurahosting.com:8050/radio.mp3"></audio>
+  <!-- ASURA HOSTING SHOUTCAST -->
+  <audio
+    id="audio"
+    preload="none"
+    src="https://a8.asurahosting.com:8050/radio.mp3"
+  ></audio>
 
   <script>
     const audio = document.getElementById('audio');
@@ -82,70 +317,112 @@
     const volume = document.getElementById('volume');
 
     audio.volume = 0.75;
+
     play.addEventListener('click', async () => {
-      if (!audio.paused) { audio.pause(); return; }
+      if (!audio.paused) {
+        audio.pause();
+        return;
+      }
+
       status.textContent = 'Connecting…';
-      try { await audio.play(); }
-      catch { status.textContent = 'Unable to play. Tap again.'; }
+
+      try {
+        await audio.play();
+      } catch {
+        status.textContent = 'Unable to play. Tap again.';
+      }
     });
+
     audio.addEventListener('playing', () => {
       play.textContent = 'Ⅱ';
       play.setAttribute('aria-label', 'Pause radio');
       status.textContent = 'You are listening live';
     });
+
     audio.addEventListener('pause', () => {
       play.textContent = '▶';
       play.setAttribute('aria-label', 'Play radio');
       status.textContent = 'Paused';
     });
-    audio.addEventListener('error', () => { status.textContent = 'Stream unavailable'; });
-    volume.addEventListener('input', e => { audio.volume = Number(e.target.value) / 100; });
+
+    audio.addEventListener('error', () => {
+      status.textContent = 'Stream unavailable';
+    });
+
+    volume.addEventListener('input', e => {
+      audio.volume = Number(e.target.value) / 100;
+    });
 
     let currentKey = '';
+    let currentImage = '';
     let imageRequest = 0;
     let polling = false;
 
     function setArtwork(url) {
       const request = ++imageRequest;
+      currentImage = url || '';
+
       if (!url) {
         artworkEl.classList.remove('visible');
         artworkEl.removeAttribute('src');
         placeholder.style.display = 'grid';
         return;
       }
+
       const next = new Image();
+
       next.onload = () => {
         if (request !== imageRequest) return;
+
         artworkEl.classList.remove('visible');
         artworkEl.src = url;
         placeholder.style.display = 'none';
-        requestAnimationFrame(() => artworkEl.classList.add('visible'));
+
+        requestAnimationFrame(() => {
+          artworkEl.classList.add('visible');
+        });
       };
+
       next.onerror = () => {
         if (request !== imageRequest) return;
+
         artworkEl.classList.remove('visible');
         artworkEl.removeAttribute('src');
         placeholder.style.display = 'grid';
       };
+
       next.src = url;
     }
 
     async function poll() {
       if (polling) return;
       polling = true;
+
       try {
-        const response = await fetch('/.netlify/functions/nowplaying', { cache: 'no-store' });
-        if (!response.ok) throw new Error('Metadata unavailable');
+        const response = await fetch(
+          '/.netlify/functions/nowplaying',
+          { cache: 'no-store' }
+        );
+
+        if (!response.ok) {
+          throw new Error('Metadata unavailable');
+        }
+
         const data = await response.json();
+
         if (data.artist && data.song) {
           const key = data.artist + '|' + data.song;
+          const image = data.image || null;
+
           if (key !== currentKey) {
             currentKey = key;
             artistEl.textContent = data.artist;
             songEl.textContent = data.song;
-            setArtwork(data.image || null);
-          } else if (data.image && artworkEl.src !== data.image && !artworkEl.classList.contains('visible')) {
-            setArtwork(data.image);
+          }
+
+          // Rasm shu qo‘shiq davomida o‘zgarsa ham yangilanadi
+          if (image !== currentImage) {
+            setArtwork(image);
           }
         }
       } catch (error) {
