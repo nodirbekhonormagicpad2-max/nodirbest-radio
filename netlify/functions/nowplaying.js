@@ -86,13 +86,17 @@ async function getNowPlaying() {
   const artist = track.artist || "NodirBest Radio";
   const song = track.title || "Your music, your vibe";
 
-  // Avval AzuraCast rasmini ishlatamiz
-  let image = track.art || null;
+  // Avval iTunes'dan haqiqiy albom rasmini qidiramiz
+let image = null;
 
-  // AzuraCast rasmi bo‘lmasa, iTunes’dan qidiramiz
-  if (!image && track.artist && track.title) {
-    image = await findArtwork(track.artist, track.title);
-  }
+if (track.artist && track.title) {
+  image = await findArtwork(track.artist, track.title);
+}
+
+// iTunes'da topilmasa, AzuraCast rasmini ishlatamiz
+if (!image) {
+  image = track.art || null;
+}
 
   return {
     artist,
