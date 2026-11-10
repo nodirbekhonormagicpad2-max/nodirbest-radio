@@ -44,11 +44,24 @@ async function findArtwork(artist, song) {
     const targetArtist = normalize(artist);
     const targetSong = normalize(song);
 
-    const match = (data.results || []).find(item =>
-      normalize(item.artistName) === targetArtist &&
-      normalize(item.trackName) === targetSong &&
-      item.artworkUrl100
-    );
+    const match = (data.results || []).find(item => {
+  const itemArtist = normalize(item.artistName);
+  const itemSong = normalize(item.trackName);
+
+  return (
+    item.artworkUrl100 &&
+    (
+      itemArtist === targetArtist ||
+      itemArtist.includes(targetArtist) ||
+      targetArtist.includes(itemArtist)
+    ) &&
+    (
+      itemSong === targetSong ||
+      itemSong.includes(targetSong) ||
+      targetSong.includes(itemSong)
+    )
+  );
+});
 
     return match
       ? match.artworkUrl100.replace(
