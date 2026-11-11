@@ -241,16 +241,47 @@
         padding-top: 20px;
       }
     }
+
+    /* Glass — radio nomi va LIVE belgisi Play yonida */
+    .glass-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: clamp(8px, 3vw, 22px);
+      width: min(100%, 560px);
+      padding: 16px clamp(12px, 3vw, 24px);
+      border: 1px solid rgba(255,255,255,.20);
+      border-radius: 26px;
+      background: linear-gradient(125deg, rgba(163,109,233,.18), rgba(255,255,255,.055));
+      box-shadow: 0 12px 36px rgba(0,0,0,.25), inset 0 1px rgba(255,255,255,.12);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .glass-brand {
+      font-size: clamp(10px, 2.8vw, 16px);
+      font-weight: 850;
+      letter-spacing: .09em;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+    .glass-live {
+      justify-self: end;
+      padding: 10px clamp(9px, 2vw, 16px);
+      font-size: clamp(10px, 2.8vw, 14px);
+      box-shadow: 0 8px 24px #ff126322;
+    }
+    .glass-panel .play { width: clamp(68px, 19vw, 92px); height: clamp(68px, 19vw, 92px); flex-shrink: 0; }
+    @media (max-width: 380px) {
+      .glass-panel { gap: 7px; padding: 12px 9px; }
+      .glass-brand { letter-spacing: .025em; }
+      .glass-live { padding: 9px 8px; }
+    }
   </style>
 </head>
 
 <body>
   <main class="player">
 
-    <header>
-      <div class="brand">NODIRBEST RADIO</div>
-      <div class="live"><span>●</span> LIVE</div>
-    </header>
 
     <section class="now-playing" aria-label="Now playing">
       <p class="eyebrow">NOW PLAYING</p>
@@ -266,7 +297,11 @@
     </section>
 
     <section class="controls">
-      <button class="play" id="play" aria-label="Play radio">▶</button>
+      <div class="glass-panel" aria-label="Radio live controls">
+        <div class="glass-brand">NODIRBEST<br>RADIO</div>
+        <button class="play" id="play" aria-label="Play radio">▶</button>
+        <div class="live glass-live"><span>●</span> LIVE</div>
+      </div>
 
       <div class="volume">
         <label for="volume">🔊</label>
