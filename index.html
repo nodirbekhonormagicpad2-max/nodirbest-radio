@@ -341,15 +341,49 @@
     const volume = document.getElementById('volume');
 
     audio.volume = 0.75;
+    const supportsMediaSession = 'mediaSession' in navigator &&
+      'MediaMetadata' in window;
+
+    let currentKey = '';
+    let currentImage = '';
+    let loadedImage = '';
+    let imageRequest = 0;
+    let polling = false;
+    let pollTimer = null;
+    const POLL_INTERVAL_MS = 60000;
+
+    function updateMediaSession() {
+      if (!supportsMediaSession) return;
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: songEl.textContent.trim() || 'NodirBest Radio',
+          artist: artistEl.textContent.trim() || 'NodirBest Radio',
+          album: 'NodirBest Radio — All Time Hits',
+          artwork: loadedImage ? [{ src: loadedImage }] : []
+        });
+        navigator.mediaSession.playbackState = audio.paused ? 'paused' : 'playing';
+      } catch (error) {
+        console.warn('Media Session:', error);
+      }
+    }
+
+    if (supportsMediaSession) {
+      try {
+        navigator.mediaSession.setActionHandler('play', () => {
+          audio.play().catch(error => console.warn('Playback:', error));
+        });
+        navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+      } catch (error) {
+        console.warn('Media controls:', error);
+      }
+    }
 
     play.addEventListener('click', async () => {
       if (!audio.paused) {
         audio.pause();
         return;
       }
-
       status.textContent = 'Connecting…';
-
       try {
         await audio.play();
       } catch {
@@ -361,92 +395,86 @@
       play.textContent = 'Ⅱ';
       play.setAttribute('aria-label', 'Pause radio');
       status.textContent = 'You are listening live';
+      updateMediaSession();
+      startMetadataUpdates();
     });
 
     audio.addEventListener('pause', () => {
       play.textContent = '▶';
       play.setAttribute('aria-label', 'Play radio');
       status.textContent = 'Paused';
+      updateMediaSession();
+      if (document.hidden) stopMetadataUpdates();
     });
 
     audio.addEventListener('error', () => {
       status.textContent = 'Stream unavailable';
+      updateMediaSession();
     });
 
-    volume.addEventListener('input', e => {
-      audio.volume = Number(e.target.value) / 100;
+    volume.addEventListener('input', event => {
+      audio.volume = Number(event.target.value) / 100;
     });
-
-    let currentKey = '';
-    let currentImage = '';
-    let imageRequest = 0;
-    let polling = false;
 
     function setArtwork(url) {
       const request = ++imageRequest;
       currentImage = url || '';
 
       if (!url) {
+        loadedImage = '';
         artworkEl.classList.remove('visible');
         artworkEl.removeAttribute('src');
         placeholder.style.display = 'grid';
+        updateMediaSession();
         return;
       }
 
-      const next = new Image();
+      // Do not show the previous song's cover while the new one loads.
+      loadedImage = '';
+      artworkEl.classList.remove('visible');
+      artworkEl.removeAttribute('src');
+      placeholder.style.display = 'grid';
+      updateMediaSession();
 
+      const next = new Image();
       next.onload = () => {
         if (request !== imageRequest) return;
-
-        artworkEl.classList.remove('visible');
+        loadedImage = url;
         artworkEl.src = url;
         placeholder.style.display = 'none';
-
-        requestAnimationFrame(() => {
-          artworkEl.classList.add('visible');
-        });
+        requestAnimationFrame(() => artworkEl.classList.add('visible'));
+        updateMediaSession();
       };
-
       next.onerror = () => {
         if (request !== imageRequest) return;
-
-        artworkEl.classList.remove('visible');
-        artworkEl.removeAttribute('src');
+        loadedImage = '';
         placeholder.style.display = 'grid';
+        updateMediaSession();
       };
-
       next.src = url;
     }
 
     async function poll() {
       if (polling) return;
       polling = true;
-
       try {
-        const response = await fetch(
-          '/.netlify/functions/nowplaying',
-          { cache: 'no-store' }
-        );
-
-        if (!response.ok) {
-          throw new Error('Metadata unavailable');
-        }
-
+        const response = await fetch('/.netlify/functions/nowplaying', {
+          cache: 'no-store'
+        });
+        if (!response.ok) throw new Error('Metadata unavailable');
         const data = await response.json();
-
         if (data.artist && data.song) {
           const key = data.artist + '|' + data.song;
-          const image = data.image || null;
-
+          const image = data.image || '';
           if (key !== currentKey) {
             currentKey = key;
             artistEl.textContent = data.artist;
             songEl.textContent = data.song;
+            // Clear old cover before publishing the next song's metadata.
+            if (image !== currentImage) setArtwork(image);
+            updateMediaSession();
           }
-
-          if (image !== currentImage) {
-            setArtwork(image);
-          }
+          if (image !== currentImage) setArtwork(image);
         }
       } catch (error) {
         console.warn('Now playing:', error.message);
@@ -455,19 +483,13 @@
       }
     }
 
-    // Check metadata only while the player tab is visible.
-    // Reduces Netlify Function requests compared with polling every 3 seconds.
-    const POLL_INTERVAL_MS = 60000;
-    let pollTimer = null;
-
     function startMetadataUpdates() {
-      if (document.hidden) return;
-      if (pollTimer === null) {
-        poll();
-        pollTimer = setInterval(() => {
-          if (!document.hidden) poll();
-        }, POLL_INTERVAL_MS);
-      }
+      if (document.hidden && audio.paused) return;
+      if (pollTimer !== null) return;
+      poll();
+      pollTimer = setInterval(() => {
+        if (!document.hidden || !audio.paused) poll();
+      }, POLL_INTERVAL_MS);
     }
 
     function stopMetadataUpdates() {
@@ -478,10 +500,15 @@
     }
 
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) stopMetadataUpdates();
-      else startMetadataUpdates();
+      if (!document.hidden || !audio.paused) {
+        startMetadataUpdates();
+        poll();
+      } else {
+        stopMetadataUpdates();
+      }
     });
 
+    updateMediaSession();
     startMetadataUpdates();
   </script>
 </body>
