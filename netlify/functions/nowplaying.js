@@ -1,11 +1,9 @@
 
-// NodirBest Radio — AzuraCast Now Playing
+// NodirBest Radio — Streamerr Now Playing
 // Netlify Function
 // AudD API kerak emas
 
-const AZURACAST_URL = "https://a8.asurahosting.com";
-
-// AzuraCast stansiya identifikatori
+const AZURACAST_URL = "https://artemis.streamerr.co";
 const STATION_ID = "nodirbest_radio";
 
 const headers = {
@@ -45,23 +43,23 @@ async function findArtwork(artist, song) {
     const targetSong = normalize(song);
 
     const match = (data.results || []).find(item => {
-  const itemArtist = normalize(item.artistName);
-  const itemSong = normalize(item.trackName);
+      const itemArtist = normalize(item.artistName);
+      const itemSong = normalize(item.trackName);
 
-  return (
-    item.artworkUrl100 &&
-    (
-      itemArtist === targetArtist ||
-      itemArtist.includes(targetArtist) ||
-      targetArtist.includes(itemArtist)
-    ) &&
-    (
-      itemSong === targetSong ||
-      itemSong.includes(targetSong) ||
-      targetSong.includes(itemSong)
-    )
-  );
-});
+      return (
+        item.artworkUrl100 &&
+        (
+          itemArtist === targetArtist ||
+          itemArtist.includes(targetArtist) ||
+          targetArtist.includes(itemArtist)
+        ) &&
+        (
+          itemSong === targetSong ||
+          itemSong.includes(targetSong) ||
+          targetSong.includes(itemSong)
+        )
+      );
+    });
 
     return match
       ? match.artworkUrl100.replace(
@@ -74,7 +72,7 @@ async function findArtwork(artist, song) {
   }
 }
 
-// AzuraCast API orqali hozirgi qo‘shiq
+// Streamerr AzuraCast API orqali hozirgi qo'shiq
 async function getNowPlaying() {
   const apiUrl =
     `${AZURACAST_URL}/api/nowplaying/` +
@@ -86,7 +84,7 @@ async function getNowPlaying() {
   });
 
   if (!response.ok) {
-    throw new Error(`AzuraCast HTTP ${response.status}`);
+    throw new Error(`Streamerr API HTTP ${response.status}`);
   }
 
   const data = await response.json();
@@ -100,23 +98,23 @@ async function getNowPlaying() {
   const song = track.title || "Your music, your vibe";
 
   // Avval iTunes'dan haqiqiy albom rasmini qidiramiz
-let image = null;
+  let image = null;
 
-if (track.artist && track.title) {
-  image = await findArtwork(track.artist, track.title);
-}
+  if (track.artist && track.title) {
+    image = await findArtwork(track.artist, track.title);
+  }
 
-// iTunes'da topilmasa, AzuraCast rasmini ishlatamiz
-if (!image) {
-  image = track.art || null;
-}
+  // iTunes'da topilmasa, Streamerr rasmini ishlatamiz
+  if (!image) {
+    image = track.art || null;
+  }
 
   return {
     artist,
     song,
     image,
     imageType: image ? "album" : null,
-    diagnostic: "AzuraCast API",
+    diagnostic: "Streamerr AzuraCast API",
     isOnline: data.is_online ?? null
   };
 }
